@@ -1,10 +1,29 @@
 import React, { useState } from 'react';
 
-let IsBlackStone = false;
 
-let moveTimes = 4;
-let whiteStones = 0;
-let blackStones = 0;
+
+
+const directions = [
+    [-1,  0],   // 상
+    [1,   0],   // 하
+    [0,  -1],   // 좌
+    [0,   1],   // 우
+    [-1, -1],   // 좌상 대각선
+    [-1,  1],   // 우상 대각선
+    [1,  -1],   // 좌하 대각선          
+    [1,   1],   // 우하 대각선
+];
+
+let isBlackStone = false;
+
+let putTimes = 4;       // 돌을 둔 횟수 
+let whiteStones = 0;    // 백돌 수
+let blackStones = 0;    // 흑돌 수
+
+let emptyCell = 0;      // 비어있는 칸
+let invalidCell = 0;    // 비어있는 칸 중 둘수없는 칸
+let validCell = 0;      // 비어있는 칸 중 둘수있는 칸
+
 const Board = ({ boardLength }) => {
 
     // n이 짝수인지 확인하고, 아니면 에러 처리
@@ -18,271 +37,208 @@ const Board = ({ boardLength }) => {
     // board 상태를 관리
     const [board, setBoard] = useState(initialBoard);
 
+    //초기값 생성
+    initialBoard[boardLength/2 - 1][boardLength/2 - 1] = initialBoard[boardLength/2][boardLength/2] = "○";
+    initialBoard[boardLength/2][boardLength/2 - 1] = initialBoard[boardLength/2 - 1][boardLength/2] = "●";
     
-    const initStone = () => {
-        initialBoard[3][3] = initialBoard[4][4] = "○";
-        initialBoard[4][3] = initialBoard[3][4] = "●";
-    }
 
-    initStone();
 
     // 셀 클릭 시 값 변경하는 함수
     const handleClick = (selectedX, selectedY) => {
-        console.log('누른 위치: %d, %d', selectedX, selectedY);
+        console.log('누른 위치: %d, %d', selectedX, selectedY);// for debug
+        
+        if (check8Directions(selectedX, selectedY, isBlackStone, board)) {
 
-        // 이미 값이 있을 경우 변경하지 않음
-        if (board[selectedX][selectedY] !== null)
-            return null;
+            // check8Directions에서 이미 유효성 검사가 끝났으니 안에서 경계검사 없이 돌을 둔다.
+            putStone(selectedX, selectedY, isBlackStone, board);
 
-        if(Move8Ways(selectedX, selectedY, board)){
-            ++moveTimes;
-            IsBlackStone = !IsBlackStone;
-            console.log(moveTimes);
+            // 돌을 두었으니 나머지 상태값들을 최신화해준다.
+            ++putTimes;
+            isBlackStone = !isBlackStone;
+
+            console.log(putTimes); // for debug
 
             // 원본 배열을 복사 (얕은 복사)
             const newBoard = board.slice();
+
             // 배열 상태 업데이트
             setBoard(newBoard);
-        }
+
+
+            // 게임의 승패를 평가한다.
+            const EvaluateGame = () => {
+                for(let i = 0; i<boardLength; ++i){
+                    for(let j = 0; j< boardLength; ++j){
+                        //빈공간
+                        if(board[i][j] === null){
+                            ++emptyCell;
+                            
+                            // 빈공간일때 둘곳이 없는 수
+                            // console.log(check8Directions(i, j, board)); //for debug 
+                            if(check8Directions(i, j, isBlackStone, board)) {
+                                ++validCell;
         
-
+                            }
         
-    };
-
-    // 8방향을 체크하는 더미 함수
-
-
-    const Move8Ways = (x, y, board) => {
-        const directions = [
-            [0, -1], // 상
-            [1, -1],  // 하
-            [1, 0], // 좌
-            [1, 1],  // 우
-            [0, 1], // 좌상 대각선
-            [-1, 1],  // 우상 대각선
-            [-1, 0],  // 좌하 대각선
-            [-1, -1]    // 우하 대각선
-        ];
-
-        let IsSucceeded = false;
-
-        for (let i = 0; i < directions.length; i++) {
-            const dir = directions[i];
-
-            const dx = dir[0]; // x 축 변화값
-            const dy = dir[1]; // y 축 변화값
-
-            
-            const checkCurrentWay = (x, y, board) => {
-                let cur_x = x;
-                let cur_y = y;
-                const originStone = IsBlackStone ? "●" : "○";
-
-                //라인에 둔 돌과 같은 색상이 있는지 체크
-                while (true) {                
-                    let next_x = cur_x + dx;
-                    let next_y = cur_y + dy;
-
-                    if (next_x < 0 || next_x >= boardLength || next_y < 0 || next_y >= boardLength) // 범위 검사
-                        return false;
-
-                    const nextStone = board[next_x][next_y] // 기준의 다음 돌
-
-                    if( nextStone == null)
-                        return false;
-
-                    if (originStone != nextStone){
-                        cur_x = next_x;
-                        cur_y = next_y;
-    
-                        continue;
+                            //invalidCell 을 바로 반환하고 싶어서 이렇게했는데 안됌.
+                            // if(checkValidation(i, j, board) == false) {
+                            //     ++invalidCell;
+        
+                            // }
+                            
+                        }
+        
+                        
+                        
                     }
-
-                    if (cur_x == x && cur_y == y)
-                        return false;
-
-                    return true;
                 }
-            }
+                invalidCell = emptyCell - validCell;
 
-            
- 
-
-            if(checkCurrentWay(x, y, board)){
-                IsSucceeded = true;
-               
-                const unifyCurWayStones = (x,y) => {
-                
-                    const originStone = IsBlackStone ? "●" : "○";
-                    let cur_x = x;
-                    let cur_y = y;
-                        
-                    
-                    while(true){
-                        let next_x = cur_x + dx;
-                        let next_y = cur_y + dy;
-
-                        if(board[next_x][next_y] == null)
-                            return false;
-
-                        if(board[next_x][next_y] !== originStone){
-                            board[next_x][next_y] = originStone;
-                        
-                            cur_x = next_x;
-                            cur_y = next_y;
-                            continue;
-                        }else{
-                            break;
+                if (putTimes === boardLength * boardLength) {
+                    // 게임이 끝남.
+                    // 흰돌과 검은돌의 수를 세어 승자를 가림.
+                    // const getResult = () => {
+                    for (let i = 0; i < boardLength; ++i) {
+                        for (let j = 0; j < boardLength; ++j) {
+                            if (board[i][j] == "○")
+                                ++whiteStones;
+                            else
+                                ++blackStones
                         }
                     }
-                    
-                }
-                
-                unifyCurWayStones(x, y);
-            }
-            
-        };
 
-        if(IsSucceeded){
-            board[x][y] = IsBlackStone ? "●" : "○";
+                    if (whiteStones > blackStones)
+                        alert("흰돌 승리!");
+
+                    else if (whiteStones < blackStones)
+                        alert("검은돌 승리!");
+
+                    else
+                        alert("무승부!");
+                }
+                else if (emptyCell > 0 && emptyCell === invalidCell) {
+                    alert("패스!");
+                    isBlackStone = !isBlackStone;
+
+                    console.log('같을때 isBlackStone =', isBlackStone);
+                }
+
+
+            }
+
+            EvaluateGame();
+
         }
-        
-        return IsSucceeded;
     };
 
-    const onlyCheck8ways = (x, y, board) => {
-        const directions = [
-            [0, -1], // 상
-            [1, -1],  // 하
-            [1, 0], // 좌
-            [1, 1],  // 우
-            [0, 1], // 좌상 대각선
-            [-1, 1],  // 우상 대각선
-            [-1, 0],  // 좌하 대각선
-            [-1, -1]    // 우하 대각선
-        ];
+    // 지정한 위치 + 지정한 방향에 돌을 둘 수 있는지 검사하는 함수
+    // x : 두고싶은 돌의 x축 위치
+    // y : 두고싶은 돌의 y축 위치
+    // dir : 검사를 할 방향
+    // isBlackStone : 두고 싶은 돌의 색
+    // board : 검사할 판
+    const check1Direction = (x, y, dir, isBlackStone, board) => {
+        const dx = dir[0]; // x 축 변화값
+        const dy = dir[1]; // y 축 변화값
 
-        let IsSucceeded = false;
+        let cur_x = x;
+        let cur_y = y;
+        const originStone = isBlackStone ? "●" : "○";
+
+        //라인에 둔 돌과 같은 색상이 있는지 체크
+        while (true) {                
+            let next_x = cur_x + dx;
+            let next_y = cur_y + dy;
+
+            // 범위 검사
+            if (next_x < 0 || next_x >= boardLength || next_y < 0 || next_y >= boardLength) 
+                return false;
+
+            // 기준의 다음 돌
+            const nextStone = board[next_x][next_y] 
+
+            //다음돌이 비어있을때
+            if(nextStone == null)
+                return false;
+
+            //다음돌이 다른색돌일때
+            if (originStone != nextStone){
+                cur_x = next_x;
+                cur_y = next_y;
+
+                continue;
+            }
+
+            //처음 시작할 때
+            if (cur_x == x && cur_y == y)
+                return false;
+
+            return true;
+        }
+    }
+
+    // 지정한 위치에 돌을 둘 수 있는지 검사하는 함수
+    // x : 두고싶은 돌의 x축 위치
+    // y : 두고싶은 돌의 y축 위치
+    // isBlackStone : 두고 싶은 돌의 색
+    // board : 검사할 판
+    const check8Directions = (x, y, isBlackStone, board) => {
+        if(board[x][y] !== null){
+            return false;
+        }
 
         //8방향을 다 보고 빠져나감
         for (let i = 0; i < directions.length; i++) {
-            const dir = directions[i];
-
-            const dx = dir[0]; // x 축 변화값
-            const dy = dir[1]; // y 축 변화값
-
-            let cur_x = x;
-            let cur_y = y;
-            const originStone = IsBlackStone ? "●" : "○";
-            //라인에 둔 돌과 같은 색상이 있는지 체크
-            while (true) {                
-                let next_x = cur_x + dx;
-                let next_y = cur_y + dy;
-                
-                // 범위 검사
-                if (next_x < 0 || next_x >= boardLength || next_y < 0 || next_y >= boardLength){
-                    break;
-                } 
-                const nextStone = board[next_x][next_y] // 기준의 다음 돌
-                if( nextStone == null)
-                    break;
-
-                if (originStone != nextStone){
-                    cur_x = next_x;
-                    cur_y = next_y;
-
-                    continue;
-                }
-                if (cur_x == x && cur_y == y)
-                    break;
-
-                IsSucceeded = true;
-                break;
-            }  
+           
+            if(check1Direction(x, y, directions[i], isBlackStone, board)){
+                return true;
+            }
         };
 
-        return IsSucceeded;
-        
+        return false;        
     };
 
+    // x, y에 돌을 두는 함수.
+    const putStone = (x, y, isBlackStone, board) => {
+        for (let i = 0; i < directions.length; i++) {
+
+            //사이의 돌을 뒤집는 함수
+            const turnOverStones = (x, y, dir) => {
+
+                const originStone = isBlackStone ? "●" : "○";
+                let cur_x = x;
+                let cur_y = y;
 
 
-    let nullkan = 0;
-    let noWaynullkan = 0;
-    let Waynullkan = 0;
-    
+                let next_x = cur_x + dir[0];
+                let next_y = cur_y + dir[1];
 
-    const Null = () => {
-        for(let i = 0; i<boardLength; ++i){
-            for(let j = 0; j< boardLength; ++j){
-                //빈공간
-                if(board[i][j] === null){
-                    ++nullkan;
+                while (!(board[next_x][next_y] == null || board[next_x][next_y] === originStone)) {
                     
-                    //빈공간일때 둘곳이 없는 수
-                    console.log(onlyCheck8ways(i, j, board));
-                    if(onlyCheck8ways(i, j, board)) {
-                        ++Waynullkan;
+                    board[next_x][next_y] = originStone;
 
-                    }
-
-                    //noWaynullkan 을 바로 반환하고 싶어서 이렇게했는데 안됌.
-                    // if(onlyCheck8ways(i, j, board) == false) {
-                    //     ++noWaynullkan;
-
-                    // }
-                    
+                    cur_x = next_x;
+                    cur_y = next_y;
+                    next_x = cur_x + dir[0];
+                    next_y = cur_y + dir[1];
                 }
-
-                
-                
             }
-        }
-        noWaynullkan = nullkan - Waynullkan;
-        console.log('Waynullkan =', Waynullkan);
-        console.log('nullkan =', nullkan);
-        console.log('noWaynullkan =', noWaynullkan);
-    }
 
-    Null();
+            if(check1Direction(x, y, directions[i], isBlackStone, board))
+                turnOverStones(x, y, directions[i]);
+        };
 
-    const Result = () => {
+        board[x][y] = isBlackStone ? "●" : "○";
 
-        if(moveTimes === boardLength * boardLength){
-            // 게임이 끝남.
-            // 흰돌과 검은돌의 수를 세어 승자를 가림.
-            // const getResult = () => {
-                for(let i=0; i< boardLength; ++i){
-                    for(let j = 0; j< boardLength; ++j){
-                        if(board[i][j] == "○" )
-                            ++whiteStones;
-                        else
-                            ++blackStones
-                    }
-                }
-
-                if (whiteStones > blackStones)
-                    alert("흰돌 승리!");
-                else if (whiteStones < blackStones)
-                    alert("검은돌 승리!");
-                    
-                else
-                    alert("무승부!");
-        }
-        else if(noWaynullkan!==0 && nullkan!==0 && noWaynullkan === nullkan){
-            alert("패스!");
-            IsBlackStone = !IsBlackStone;
-            
-            console.log('같을때 IsBlackStone =', IsBlackStone);
-        }
-
-        
-    }
-    Result();
-
+    };
 
     return (
-        <div>
+        <div style={{display : 'flex', 
+                    flexDirection : 'column', 
+                    alignItems : 'center', 
+                    paddingTop : '5%'
+                    }}
+                    >
             {board.map((row, rowIndex) => (
                 <div key={rowIndex} style={{ display: 'flex' }}>
                     {row.map((cell, colIndex) => (
@@ -306,9 +262,12 @@ const Board = ({ boardLength }) => {
                 </div>
             ))}
 
-            <div style={{textAlign : 'left', marginTop : '10px'}}>누구차례? : {IsBlackStone ? "●" : "○"}</div>
+            <div style={{textAlign : 'left', marginTop : '10px', fontWeight : 'bold'}}>순서 : {isBlackStone ? "●" : "○"}</div>
         </div>
     );
 };
 
 export default Board;
+
+
+//함수를 board 안에 넣으면 안된다는걸 깨달음
