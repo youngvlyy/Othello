@@ -45,7 +45,6 @@ const Board = ({ boardLength }) => {
 
     // 셀 클릭 시 값 변경하는 함수
     const handleClick = (selectedX, selectedY) => {
-        console.log('누른 위치: %d, %d', selectedX, selectedY);// for debug
         
         if (check8Directions(selectedX, selectedY, isBlackStone, board)) {
 
@@ -56,78 +55,13 @@ const Board = ({ boardLength }) => {
             ++putTimes;
             isBlackStone = !isBlackStone;
 
-            console.log(putTimes); // for debug
-
+            
             // 원본 배열을 복사 (얕은 복사)
             const newBoard = board.slice();
 
             // 배열 상태 업데이트
             setBoard(newBoard);
-
-
-            // 게임의 승패를 평가한다.
-            const EvaluateGame = () => {
-                for(let i = 0; i<boardLength; ++i){
-                    for(let j = 0; j< boardLength; ++j){
-                        //빈공간
-                        if(board[i][j] === null){
-                            ++emptyCell;
-                            
-                            // 빈공간일때 둘곳이 없는 수
-                            // console.log(check8Directions(i, j, board)); //for debug 
-                            if(check8Directions(i, j, isBlackStone, board)) {
-                                ++validCell;
-        
-                            }
-        
-                            //invalidCell 을 바로 반환하고 싶어서 이렇게했는데 안됌.
-                            // if(checkValidation(i, j, board) == false) {
-                            //     ++invalidCell;
-        
-                            // }
-                            
-                        }
-        
-                        
-                        
-                    }
-                }
-                invalidCell = emptyCell - validCell;
-
-                if (putTimes === boardLength * boardLength) {
-                    // 게임이 끝남.
-                    // 흰돌과 검은돌의 수를 세어 승자를 가림.
-                    // const getResult = () => {
-                    for (let i = 0; i < boardLength; ++i) {
-                        for (let j = 0; j < boardLength; ++j) {
-                            if (board[i][j] == "○")
-                                ++whiteStones;
-                            else
-                                ++blackStones
-                        }
-                    }
-
-                    if (whiteStones > blackStones)
-                        alert("흰돌 승리!");
-
-                    else if (whiteStones < blackStones)
-                        alert("검은돌 승리!");
-
-                    else
-                        alert("무승부!");
-                }
-                else if (emptyCell > 0 && emptyCell === invalidCell) {
-                    alert("패스!");
-                    isBlackStone = !isBlackStone;
-
-                    console.log('같을때 isBlackStone =', isBlackStone);
-                }
-
-
-            }
-
-            EvaluateGame();
-
+    
         }
     };
 
@@ -209,7 +143,6 @@ const Board = ({ boardLength }) => {
                 let cur_x = x;
                 let cur_y = y;
 
-
                 let next_x = cur_x + dir[0];
                 let next_y = cur_y + dir[1];
 
@@ -231,6 +164,68 @@ const Board = ({ boardLength }) => {
         board[x][y] = isBlackStone ? "●" : "○";
 
     };
+
+     // 게임의 승패를 평가한다.
+     const EvaluateGame = () => {
+        for(let i = 0; i<boardLength; ++i){
+            for(let j = 0; j< boardLength; ++j){
+                //빈공간
+                if(board[i][j] === null){
+                    ++emptyCell;
+                    
+                    // 빈공간일때 둘곳이 없는 수
+                    
+                    if(check8Directions(i, j, isBlackStone, board)) {
+                        ++validCell;
+
+                    }
+
+                    //invalidCell 을 바로 반환하고 싶어서 이렇게했는데 안됌.
+                    // if(checkValidation(i, j, board) == false) {
+                    //     ++invalidCell;
+
+                    // }
+                    
+                }
+
+                
+                
+            }
+        }
+        invalidCell = emptyCell - validCell;
+
+        if (putTimes === boardLength * boardLength) {
+            // 게임이 끝남.
+            // 흰돌과 검은돌의 수를 세어 승자를 가림.
+            // const getResult = () => {
+            for (let i = 0; i < boardLength; ++i) {
+                for (let j = 0; j < boardLength; ++j) {
+                    if (board[i][j] == "○")
+                        ++whiteStones;
+                    else
+                        ++blackStones
+                }
+            }
+
+            if (whiteStones > blackStones)
+                alert("흰돌 승리!");
+
+            else if (whiteStones < blackStones)
+                alert("검은돌 승리!");
+
+            else
+                alert("무승부!");
+        }
+        else if (emptyCell > 0 && emptyCell === invalidCell) {
+            alert("패스!");
+            isBlackStone = !isBlackStone;
+            
+        }
+
+
+    }
+
+    EvaluateGame();
 
     return (
         <div style={{display : 'flex', 
