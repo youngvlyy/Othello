@@ -1,20 +1,20 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 
 
 
 const directions = [
-    [-1,  0],   // 상
-    [1,   0],   // 하
-    [0,  -1],   // 좌
-    [0,   1],   // 우
+    [-1, 0],   // 상
+    [1, 0],   // 하
+    [0, -1],   // 좌
+    [0, 1],   // 우
     [-1, -1],   // 좌상 대각선
-    [-1,  1],   // 우상 대각선
-    [1,  -1],   // 좌하 대각선          
-    [1,   1],   // 우하 대각선
+    [-1, 1],   // 우상 대각선
+    [1, -1],   // 좌하 대각선          
+    [1, 1],   // 우하 대각선
 ];
 
-let isBlackStone = false;
+// let isBlackStone = false;
 
 let putTimes = 4;       // 돌을 둔 횟수 
 let whiteStones = 0;    // 백돌 수
@@ -23,8 +23,11 @@ let blackStones = 0;    // 흑돌 수
 let emptyCell = 0;      // 비어있는 칸
 let invalidCell = 0;    // 비어있는 칸 중 둘수없는 칸
 let validCell = 0;      // 비어있는 칸 중 둘수있는 칸
+// let count = 0;
 
 const Board = ({ boardLength }) => {
+    const [isBlackStone, setisBlackstone] = useState(false);
+
 
     // n이 짝수인지 확인하고, 아니면 에러 처리
     if (boardLength % 2 !== 0) {
@@ -38,30 +41,32 @@ const Board = ({ boardLength }) => {
     const [board, setBoard] = useState(initialBoard);
 
     //초기값 생성
-    initialBoard[boardLength/2 - 1][boardLength/2 - 1] = initialBoard[boardLength/2][boardLength/2] = "○";
-    initialBoard[boardLength/2][boardLength/2 - 1] = initialBoard[boardLength/2 - 1][boardLength/2] = "●";
+    initialBoard[boardLength / 2 - 1][boardLength / 2 - 1] = initialBoard[boardLength / 2][boardLength / 2] = "○";
+    initialBoard[boardLength / 2][boardLength / 2 - 1] = initialBoard[boardLength / 2 - 1][boardLength / 2] = "●";
+
+    useEffect(()=>{
+        EvaluateGame();
+    }, [isBlackStone]);
     
-
-
     // 셀 클릭 시 값 변경하는 함수
     const handleClick = (selectedX, selectedY) => {
-        
+
         if (check8Directions(selectedX, selectedY, isBlackStone, board)) {
 
-            // check8Directions에서 이미 유효성 검사가 끝났으니 안에서 경계검사 없이 돌을 둔다.
+            // check8Directions에서 이미 유효성 검사가 끝났으니 안에서 경계검사 없이 돌을 둠
             putStone(selectedX, selectedY, isBlackStone, board);
 
-            // 돌을 두었으니 나머지 상태값들을 최신화해준다.
+            // 돌을 두었으니 나머지 상태값들을 최신화
             ++putTimes;
-            isBlackStone = !isBlackStone;
+            setisBlackstone(!isBlackStone);
 
-            
+
             // 원본 배열을 복사 (얕은 복사)
             const newBoard = board.slice();
 
             // 배열 상태 업데이트
             setBoard(newBoard);
-    
+
         }
     };
 
@@ -80,23 +85,23 @@ const Board = ({ boardLength }) => {
         const originStone = isBlackStone ? "●" : "○";
 
         //라인에 둔 돌과 같은 색상이 있는지 체크
-        while (true) {                
+        while (true) {
             let next_x = cur_x + dx;
             let next_y = cur_y + dy;
 
             // 범위 검사
-            if (next_x < 0 || next_x >= boardLength || next_y < 0 || next_y >= boardLength) 
+            if (next_x < 0 || next_x >= boardLength || next_y < 0 || next_y >= boardLength)
                 return false;
 
             // 기준의 다음 돌
-            const nextStone = board[next_x][next_y] 
+            const nextStone = board[next_x][next_y]
 
             //다음돌이 비어있을때
-            if(nextStone == null)
+            if (nextStone == null)
                 return false;
 
             //다음돌이 다른색돌일때
-            if (originStone != nextStone){
+            if (originStone !== nextStone) {
                 cur_x = next_x;
                 cur_y = next_y;
 
@@ -104,7 +109,7 @@ const Board = ({ boardLength }) => {
             }
 
             //처음 시작할 때
-            if (cur_x == x && cur_y == y)
+            if (cur_x === x && cur_y === y)
                 return false;
 
             return true;
@@ -117,19 +122,19 @@ const Board = ({ boardLength }) => {
     // isBlackStone : 두고 싶은 돌의 색
     // board : 검사할 판
     const check8Directions = (x, y, isBlackStone, board) => {
-        if(board[x][y] !== null){
+        if (board[x][y] !== null) {
             return false;
         }
 
         //8방향을 다 보고 빠져나감
         for (let i = 0; i < directions.length; i++) {
-           
-            if(check1Direction(x, y, directions[i], isBlackStone, board)){
+
+            if (check1Direction(x, y, directions[i], isBlackStone, board)) {
                 return true;
             }
         };
 
-        return false;        
+        return false;
     };
 
     // x, y에 돌을 두는 함수.
@@ -147,7 +152,7 @@ const Board = ({ boardLength }) => {
                 let next_y = cur_y + dir[1];
 
                 while (!(board[next_x][next_y] == null || board[next_x][next_y] === originStone)) {
-                    
+
                     board[next_x][next_y] = originStone;
 
                     cur_x = next_x;
@@ -157,7 +162,7 @@ const Board = ({ boardLength }) => {
                 }
             }
 
-            if(check1Direction(x, y, directions[i], isBlackStone, board))
+            if (check1Direction(x, y, directions[i], isBlackStone, board))
                 turnOverStones(x, y, directions[i]);
         };
 
@@ -165,17 +170,17 @@ const Board = ({ boardLength }) => {
 
     };
 
-     // 게임의 승패를 평가한다.
-     const EvaluateGame = () => {
-        for(let i = 0; i<boardLength; ++i){
-            for(let j = 0; j< boardLength; ++j){
+    // 게임의 승패를 평가한다.
+    const EvaluateGame = () => {
+        for (let i = 0; i < boardLength; ++i) {
+            for (let j = 0; j < boardLength; ++j) {
                 //빈공간
-                if(board[i][j] === null){
+                if (board[i][j] === null) {
                     ++emptyCell;
-                    
+
                     // 빈공간일때 둘곳이 없는 수
-                    
-                    if(check8Directions(i, j, isBlackStone, board)) {
+
+                    if (check8Directions(i, j, isBlackStone, board)) {
                         ++validCell;
 
                     }
@@ -185,11 +190,8 @@ const Board = ({ boardLength }) => {
                     //     ++invalidCell;
 
                     // }
-                    
-                }
 
-                
-                
+                }
             }
         }
         invalidCell = emptyCell - validCell;
@@ -200,7 +202,7 @@ const Board = ({ boardLength }) => {
             // const getResult = () => {
             for (let i = 0; i < boardLength; ++i) {
                 for (let j = 0; j < boardLength; ++j) {
-                    if (board[i][j] == "○")
+                    if (board[i][j] === "○")
                         ++whiteStones;
                     else
                         ++blackStones
@@ -219,50 +221,106 @@ const Board = ({ boardLength }) => {
         else if (emptyCell > 0 && emptyCell === invalidCell) {
             alert("패스!");
             isBlackStone = !isBlackStone;
-            
+
         }
 
 
     }
 
-    EvaluateGame();
+    
 
-    return (
-        <div style={{display : 'flex', 
-                    flexDirection : 'column', 
-                    alignItems : 'center', 
-                    paddingTop : '5%'
-                    }}
-                    >
+
+return (
+    <div
+        style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            padding: "40px",
+            minHeight: "calc(100vh - 80px)",
+            background: "linear-gradient(135deg, #f5f7fa, #c3cfe2)",
+        }}
+    >
+        {/* 보드 */}
+        <div
+            style={{
+                width: "90vw",
+                maxWidth: "280px",
+                aspectRatio: "1 / 1",
+                padding: "20px",
+                background: "linear-gradient(135deg, #636363ff, #000000ff)",
+                borderRadius: "12px",
+                boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+            }}
+        >
             {board.map((row, rowIndex) => (
-                <div key={rowIndex} style={{ display: 'flex' }}>
+                <div
+                    key={rowIndex}
+                    style={{
+                        display: "flex",
+                        flex: 1,
+                    }}
+                >
                     {row.map((cell, colIndex) => (
                         <div
                             key={colIndex}
                             onClick={() => handleClick(rowIndex, colIndex)}
                             style={{
-                                width: '50px',
-                                height: '50px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                border: '1px solid black',
-                                cursor: 'pointer',
+                                flex: 1,
+                                aspectRatio: "1 / 1",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                border: "1px solid rgba(0,0,0,0.3)",
+                                background: "linear-gradient(135deg, #1dd600ff, #24a600ff)",
+                                cursor: "pointer",
                             }}
                         >
-                            {cell ? cell : ' '}
-
+                            {cell && (
+                                <div
+                                    style={{
+                                        width: "70%",
+                                        height: "70%",
+                                        borderRadius: "50%",
+                                        backgroundColor:
+                                            cell === "●" ? "#111" : "#fff",
+                                        boxShadow:
+                                            cell === "●"
+                                                ? "inset -2px -2px 6px rgba(255,255,255,0.3)"
+                                                : "inset 2px 2px 6px rgba(0,0,0,0.2)",
+                                    }}
+                                />
+                            )}
                         </div>
                     ))}
                 </div>
             ))}
-
-            <div style={{textAlign : 'left', marginTop : '10px', fontWeight : 'bold'}}>순서 : {isBlackStone ? "●" : "○"}</div>
         </div>
-    );
+
+        {/* 순서 표시 */}
+        <div
+            style={{
+                marginTop: "16px",
+                padding: "5px 16px",
+                background: "#fff",
+                borderRadius: "20px",
+                fontWeight: "bold",
+                fontSize: "clamp(14px, 4vw, 18px)",
+                boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
+            }}
+        >
+            현재 순서 :
+            <span style={{ marginLeft: "8px", fontSize: "1.2em", lineHeight: "16px" }}>
+                {isBlackStone ? "●" : "○"}
+            </span>
+        </div>
+    </div>
+);
+
+
 };
 
 export default Board;
-
-
-//함수를 board 안에 넣으면 안된다는걸 깨달음
